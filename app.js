@@ -1,14 +1,78 @@
-// JU 52nd Batch Academic Data Portal - Application Logic
+// JU 52nd Batch Academic Data Portal - Application Logic & Admin Engine
 // PRD v1.0 Compliant: Mandatory Session Restriction to 2022-2023 at the Data/Query Layer
+// Full Admin Panel with Add, Minus (Delete), Bulk Delete, and LocalStorage Persistence
 
 const CANONICAL_SESSION = '2022-2023';
 const BATCH_LABEL = 'JU 52nd Batch / ৫২তম আবর্তন';
+const STORAGE_KEY = 'JU52_STUDENTS_CUSTOM_V2';
+
+// 19 Official Residential Halls
+const OFFICIAL_HALLS = [
+  'A F M Kamaluddin Hall',
+  'Al Beruni Hall',
+  'Begum Khaleda Zia Hall',
+  'Begum Sufia Kamal Hall',
+  'Bir Protik Taramon Bibi Hall',
+  'Bishwakabi Rabindranath Tagore Hall',
+  'Fazilatunnesa Hall',
+  'Jahanara Imam Hall',
+  'Jatiya Kabi Kazi Nazrul Islam Hall',
+  'JULY-24 JAGORONI HALL',
+  'Mir Mosharraf Hossain Hall',
+  'Mowlana Bhashani Hall',
+  'Nawab Faizunnesa Hall',
+  'NAWAB SALIMULLAH HALL',
+  'Pritilata Hall',
+  'SHAHEED FELANI KHATUN HALL',
+  'Shaheed Rafiq-Jabbar Hall',
+  'Shaheed Salam-Barkat Hall',
+  'SHER-E-BANGLA A. K. FAZLUL HUQ HALL'
+];
+
+// 37 Canonical Departments & Institutes
+const OFFICIAL_DEPTS = [
+  'Accounting and Information Systems',
+  'Anthropology',
+  'Archaeology',
+  'Bangla',
+  'Biochemistry and Molecular Biology',
+  'Biotechnology and Genetic Engineering',
+  'Botany',
+  'Chemistry',
+  'Computer Science and Engineering',
+  'Drama and Dramatics',
+  'Economics',
+  'English',
+  'Environmental Sciences',
+  'Finance and Banking',
+  'Fine Art',
+  'Geography and Environment',
+  'Geological Sciences',
+  'Government and Politics',
+  'History',
+  'Institute of Business Administration (IBA-JU)',
+  'Institute of Comparative Literature and Culture (ICLC)',
+  'Institute of Information Technology (IIT)',
+  'International Relations',
+  'Journalism and Media Studies',
+  'Law and Justice',
+  'Management Studies',
+  'Marketing',
+  'Mathematics',
+  'Microbiology',
+  'Pharmacy',
+  'Philosophy',
+  'Physics',
+  'Public Administration',
+  'Public Health and Informatics',
+  'Statistics and Data Science',
+  'Urban and Regional Planning',
+  'Zoology'
+];
 
 // Application State
 const state = {
-  // Query-layer eligible records (strictly 2022-2023)
   eligibleRecords: [],
-  // Multi-session audit/quarantined dataset
   quarantinedRecords: [],
   selectedIds: new Set(),
   filteredRecords: [],
@@ -28,47 +92,127 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // Data-layer isolation: filter eligible records strictly by session === '2022-2023'
-  state.eligibleRecords = (window.JU_DATA.batch52Students || []).filter(r => r.session === CANONICAL_SESSION);
+  // Load dataset: prefer localStorage if custom additions/deletions exist, otherwise load default
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      state.eligibleRecords = JSON.parse(saved);
+      console.log(`Loaded ${state.eligibleRecords.length} records from LocalStorage.`);
+    } catch (e) {
+      console.error('Error reading localStorage, loading default data:', e);
+      state.eligibleRecords = (window.JU_DATA.batch52Students || []).filter(r => r.session === CANONICAL_SESSION);
+    }
+  } else {
+    state.eligibleRecords = (window.JU_DATA.batch52Students || []).filter(r => r.session === CANONICAL_SESSION);
+  }
+
   state.quarantinedRecords = window.JU_DATA.quarantinedSample || [];
 
   initFilters();
+  initAdminDropdowns();
   initKPIs();
   applyFilters();
   renderAuditTable();
+  renderAdminManageTable();
   initCharts();
 });
 
-// Initialize Hall and Department Dropdowns
+// Populate Hall and Department Dropdowns in Filters
 function initFilters() {
   const hallSelect = document.getElementById('filter-hall');
   const deptSelect = document.getElementById('filter-dept');
 
-  // Extract unique halls and sort alphabetically
-  const halls = Array.from(new Set(state.eligibleRecords.map(r => r.hall))).sort();
-  halls.forEach(hall => {
-    const count = state.eligibleRecords.filter(r => r.hall === hall).length;
+  hallSelect.innerHTML = '<option value="ALL">All Halls (সকল হল)</option>';
+  deptSelect.innerHTML = '<option value="ALL">All Departments (সকল বিভাগ)</option>';
+
+  OFFICIAL_HALLS.forEach(hall => {
     const opt = document.createElement('option');
     opt.value = hall;
-    opt.textContent = `${hall} (${count})`;
+    opt.textContent = hall;
     hallSelect.appendChild(opt);
   });
 
-  // Extract unique departments and sort alphabetically
-  const depts = Array.from(new Set(state.eligibleRecords.map(r => r.department))).sort();
-  depts.forEach(dept => {
-    const count = state.eligibleRecords.filter(r => r.department === dept).length;
+  OFFICIAL_DEPTS.forEach(dept => {
     const opt = document.createElement('option');
     opt.value = dept;
-    opt.textContent = `${dept} (${count})`;
+    opt.textContent = dept;
     deptSelect.appendChild(opt);
   });
+}
+
+// Populate Admin Panel Dropdowns
+function initAdminDropdowns() {
+  const adminHall = document.getElementById('admin-add-hall');
+  const adminDept = document.getElementById('admin-add-dept');
+  const adminFilterHall = document.getElementById('admin-hall-filter');
+  const modalHall = document.getElementById('modal-add-hall');
+  const modalDept = document.getElementById('modal-add-dept');
+
+  if (adminHall) {
+    adminHall.innerHTML = '';
+    OFFICIAL_HALLS.forEach(h => {
+      const opt = document.createElement('option');
+      opt.value = h;
+      opt.textContent = h;
+      adminHall.appendChild(opt);
+    });
+  }
+
+  if (adminDept) {
+    adminDept.innerHTML = '';
+    OFFICIAL_DEPTS.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = d;
+      adminDept.appendChild(opt);
+    });
+  }
+
+  if (adminFilterHall) {
+    adminFilterHall.innerHTML = '<option value="ALL">সকল হল (All Halls)</option>';
+    OFFICIAL_HALLS.forEach(h => {
+      const opt = document.createElement('option');
+      opt.value = h;
+      opt.textContent = h;
+      adminFilterHall.appendChild(opt);
+    });
+  }
+
+  if (modalHall) {
+    modalHall.innerHTML = '';
+    OFFICIAL_HALLS.forEach(h => {
+      const opt = document.createElement('option');
+      opt.value = h;
+      opt.textContent = h;
+      modalHall.appendChild(opt);
+    });
+  }
+
+  if (modalDept) {
+    modalDept.innerHTML = '';
+    OFFICIAL_DEPTS.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = d;
+      modalDept.appendChild(opt);
+    });
+  }
+}
+
+// Save modified records to LocalStorage and update entire UI
+function saveAndRefresh() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.eligibleRecords));
+  initKPIs();
+  applyFilters();
+  renderAdminManageTable();
+  if (state.hallChart) renderAnalyticsTab();
 }
 
 // Initialize KPI Cards
 function initKPIs() {
   document.getElementById('kpi-eligible').textContent = state.eligibleRecords.length.toLocaleString();
   document.getElementById('kpi-quarantined').textContent = (window.JU_DATA.meta.totalQuarantined || 5980).toLocaleString();
+  document.getElementById('admin-manage-count').textContent = `মোট রেকর্ড: ${state.eligibleRecords.length.toLocaleString()} জন`;
   updateSelectionKPI();
 }
 
@@ -81,6 +225,18 @@ function updateSelectionKPI() {
   document.getElementById('kpi-selected').textContent = count.toLocaleString();
   document.getElementById('kpi-selected-pct').textContent = `${pct}%`;
   document.getElementById('toolbar-selected-count').textContent = count.toLocaleString();
+
+  // Show/Hide batch delete buttons in toolbar
+  const btnDeleteSelected = document.getElementById('btn-delete-selected');
+  const deleteCount = document.getElementById('btn-delete-selected-count');
+  if (btnDeleteSelected && deleteCount) {
+    if (count > 0) {
+      btnDeleteSelected.classList.remove('hidden');
+      deleteCount.textContent = count;
+    } else {
+      btnDeleteSelected.classList.add('hidden');
+    }
+  }
 }
 
 // Data/Query Layer Search and Filter Execution
@@ -89,7 +245,6 @@ function applyFilters() {
   const hall = state.selectedHall;
   const dept = state.selectedDept;
 
-  // PRD FR-02 & FR-03: Every query enforces session === '2022-2023' at the source!
   state.filteredRecords = state.eligibleRecords.filter(record => {
     // Session allowlist check (FR-01)
     if (record.session !== CANONICAL_SESSION) return false;
@@ -100,7 +255,7 @@ function applyFilters() {
     // Department filter (FR-04)
     if (dept !== 'ALL' && record.department !== dept) return false;
 
-    // Search query match (Name, Reg No, Roll No, Dept, Hall)
+    // Search query match
     if (query) {
       const matchName = record.name && record.name.toLowerCase().includes(query);
       const matchReg = record.regNo && record.regNo.includes(query);
@@ -118,7 +273,7 @@ function applyFilters() {
   renderTable();
 }
 
-// Render Table Rows with Responsive Layout & Sticky Header
+// Render Table Rows with Responsive Layout & Action Controls
 function renderTable() {
   const tbody = document.getElementById('records-table-body');
   const emptyState = document.getElementById('table-empty-state');
@@ -167,20 +322,209 @@ function renderTable() {
         </span>
       </td>
       <td class="text-center" data-label="Action">
-        <button onclick="viewStudentDetails('${record.id}')" class="px-2.5 py-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded transition">
-          View
-        </button>
+        <div class="inline-flex items-center space-x-1">
+          <button onclick="viewStudentDetails('${record.id}')" title="বিস্তারিত দেখুন" class="px-2 py-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded transition">
+            View
+          </button>
+          <button onclick="deleteStudent('${record.id}')" title="রেকর্ড মাইনাস / মুছুন" class="px-2 py-1 text-[11px] font-semibold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 rounded transition">
+            🗑️ বাদ দিন
+          </button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
   });
 
-  // Check if all items on page are selected
   const allPageSelected = pageRecords.every(r => state.selectedIds.has(r.id));
   const headerCheckbox = document.getElementById('header-select-page');
   if (headerCheckbox) headerCheckbox.checked = pageRecords.length > 0 && allPageSelected;
 
   updatePaginationUI(startIndex + 1, endIndex, state.filteredRecords.length);
+}
+
+// ==========================================
+// ADMIN ACTIONS: ADD, MINUS, BATCH DELETE
+// ==========================================
+
+// 1. Add Record from Admin Form
+function handleAdminAddRecord(event) {
+  event.preventDefault();
+  const name = document.getElementById('admin-add-name').value.trim();
+  const hall = document.getElementById('admin-add-hall').value;
+  const dept = document.getElementById('admin-add-dept').value;
+  const regNo = document.getElementById('admin-add-reg').value.trim();
+  const rollNo = document.getElementById('admin-add-roll').value.trim();
+
+  if (!name || !regNo) {
+    alert('নাম এবং রেজিস্ট্রেশন নম্বর আবশ্যক!');
+    return;
+  }
+
+  // Create new record
+  const newStudent = {
+    id: `CUSTOM_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+    slNo: state.eligibleRecords.length + 1,
+    name: name.toUpperCase(),
+    hall: hall,
+    department: dept,
+    regNo: regNo,
+    rollNo: rollNo || '',
+    session: CANONICAL_SESSION,
+    isBatch52: true
+  };
+
+  // Add to top of list
+  state.eligibleRecords.unshift(newStudent);
+  saveAndRefresh();
+
+  // Reset form and show success
+  document.getElementById('admin-add-form').reset();
+  const alertBox = document.getElementById('admin-add-alert');
+  alertBox.className = 'p-3 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 block';
+  alertBox.innerHTML = `✓ শিক্ষার্থী <strong>${escapeHTML(newStudent.name)}</strong> সফলভাবে যুক্ত করা হয়েছে!`;
+  setTimeout(() => { alertBox.classList.add('hidden'); }, 4000);
+}
+
+// 2. Add Record from Modal
+function handleModalAddRecord(event) {
+  event.preventDefault();
+  const name = document.getElementById('modal-add-name').value.trim();
+  const hall = document.getElementById('modal-add-hall').value;
+  const dept = document.getElementById('modal-add-dept').value;
+  const regNo = document.getElementById('modal-add-reg').value.trim();
+  const rollNo = document.getElementById('modal-add-roll').value.trim();
+
+  if (!name || !regNo) {
+    alert('নাম এবং রেজিস্ট্রেশন নম্বর আবশ্যক!');
+    return;
+  }
+
+  const newStudent = {
+    id: `CUSTOM_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+    slNo: state.eligibleRecords.length + 1,
+    name: name.toUpperCase(),
+    hall: hall,
+    department: dept,
+    regNo: regNo,
+    rollNo: rollNo || '',
+    session: CANONICAL_SESSION,
+    isBatch52: true
+  };
+
+  state.eligibleRecords.unshift(newStudent);
+  saveAndRefresh();
+  closeAddModal();
+  alert(`✓ শিক্ষার্থী "${newStudent.name}" সফলভাবে যুক্ত হয়েছে!`);
+}
+
+// 3. Minus / Delete Record (একক রেকর্ড ডিলিট)
+function deleteStudent(id) {
+  const student = state.eligibleRecords.find(r => r.id === id);
+  if (!student) return;
+
+  const confirmed = confirm(`আপনি কি নিশ্চিতভাবে "${student.name}" (রেজি: ${student.regNo}) রেকর্ডটি তালিকা থেকে বাদ/মাইনাস করতে চান?`);
+  if (!confirmed) return;
+
+  state.eligibleRecords = state.eligibleRecords.filter(r => r.id !== id);
+  state.selectedIds.delete(id);
+  saveAndRefresh();
+  closeModal();
+}
+
+// 4. Batch Delete (একাধিক রেকর্ড একসাথে ডিলিট)
+function deleteSelectedStudents() {
+  const count = state.selectedIds.size;
+  if (count === 0) {
+    alert('মুছে ফেলার জন্য অন্তত একটি রেকর্ড সিলেক্ট করুন।');
+    return;
+  }
+
+  const confirmed = confirm(`আপনি কি নিশ্চিতভাবে নির্বাচিত ${count} জন শিক্ষার্থীর রেকর্ড তালিকা থেকে ডিলিট/মাইনাস করতে চান?`);
+  if (!confirmed) return;
+
+  state.eligibleRecords = state.eligibleRecords.filter(r => !state.selectedIds.has(r.id));
+  state.selectedIds.clear();
+  saveAndRefresh();
+  alert(`✓ সফলভাবে ${count} জন শিক্ষার্থীর রেকর্ড মুছে ফেলা হয়েছে!`);
+}
+
+// 5. Render Admin Management Mini Table
+function renderAdminManageTable() {
+  const tbody = document.getElementById('admin-manage-tbody');
+  if (!tbody) return;
+
+  const search = (document.getElementById('admin-search')?.value || '').toLowerCase().trim();
+  const hallFilter = document.getElementById('admin-hall-filter')?.value || 'ALL';
+
+  let list = state.eligibleRecords;
+  if (hallFilter !== 'ALL') {
+    list = list.filter(r => r.hall === hallFilter);
+  }
+  if (search) {
+    list = list.filter(r => 
+      (r.name && r.name.toLowerCase().includes(search)) ||
+      (r.regNo && r.regNo.includes(search)) ||
+      (r.rollNo && r.rollNo.includes(search)) ||
+      (r.department && r.department.toLowerCase().includes(search))
+    );
+  }
+
+  tbody.innerHTML = '';
+  const displayLimit = Math.min(list.length, 100);
+
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" class="py-6 text-center text-slate-400">কোনো রেকর্ড পাওয়া যায়নি।</td></tr>';
+    return;
+  }
+
+  for (let i = 0; i < displayLimit; i++) {
+    const r = list[i];
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-slate-50 transition';
+    tr.innerHTML = `
+      <td class="py-2 px-3">
+        <div class="font-bold text-slate-900">${escapeHTML(r.name)}</div>
+        <div class="text-[11px] text-slate-500">${escapeHTML(r.department)}</div>
+      </td>
+      <td class="py-2 px-3">
+        <div class="text-[11px] font-semibold text-slate-700">${escapeHTML(r.hall)}</div>
+        <div class="text-[10px] font-mono text-slate-500">Reg: ${escapeHTML(r.regNo)} | Roll: ${escapeHTML(r.rollNo || '-')}</div>
+      </td>
+      <td class="py-2 px-3 text-right">
+        <button onclick="deleteStudent('${r.id}')" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded font-bold text-[11px] transition border border-rose-200">
+          🗑️ বাদ দিন
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+// 6. Reset to Official Default Dataset
+function resetToOriginalData() {
+  const confirmed = confirm('আপনি কি নিশ্চিতভাবে মূল অফিশিয়াল ১,৯৫৮ জন শিক্ষার্থীর ডাটায় রিসেট করতে চান? আপনার কাস্টম সমস্ত এড এবং ডিলিট পরিবর্তন মুছে যাবে।');
+  if (!confirmed) return;
+
+  localStorage.removeItem(STORAGE_KEY);
+  state.eligibleRecords = (window.JU_DATA.batch52Students || []).filter(r => r.session === CANONICAL_SESSION);
+  state.selectedIds.clear();
+  saveAndRefresh();
+  alert('✓ সফলভাবে মূল অফিশিয়াল ডেটায় রিস্টোর করা হয়েছে!');
+}
+
+// 7. Download Updated JSON
+function downloadUpdatedJSON() {
+  const dataStr = JSON.stringify(state.eligibleRecords, null, 2);
+  downloadFile(dataStr, `JU52_Updated_Records_${Date.now()}.json`, 'application/json');
+}
+
+// Modal controls for Add Modal
+function openAddModal() {
+  document.getElementById('add-modal').classList.remove('hidden');
+}
+
+function closeAddModal() {
+  document.getElementById('add-modal').classList.add('hidden');
 }
 
 // Pagination Controls
@@ -276,7 +620,7 @@ function clearSelection() {
   renderTable();
 }
 
-// PRD FR-09: Export and Summary Consistency
+// Export functions
 function exportSelectedCSV() {
   const records = getSelectedOrFiltered();
   if (records.length === 0) {
@@ -284,7 +628,6 @@ function exportSelectedCSV() {
     return;
   }
 
-  // Mandatory metadata header per PRD FR-08 & FR-09
   let csv = `# Eligible Session: 2022–2023 — JU 52nd Batch / ৫২তম আবর্তন\n`;
   csv += `# Organization: Jahangirnagar University\n`;
   csv += `# Export Date: ${new Date().toLocaleString()}\n`;
@@ -424,6 +767,12 @@ function viewStudentDetails(id) {
   document.getElementById('modal-reg').textContent = student.regNo;
   document.getElementById('modal-roll').textContent = student.rollNo || 'N/A';
   document.getElementById('modal-session').textContent = '2022-2023 (JU 52nd Batch)';
+  
+  const deleteBtn = document.getElementById('modal-delete-btn');
+  if (deleteBtn) {
+    deleteBtn.onclick = () => deleteStudent(id);
+  }
+
   document.getElementById('detail-modal').classList.remove('hidden');
 }
 
@@ -433,48 +782,67 @@ function closeModal() {
 
 // Tab Switching
 function switchTab(tabId) {
-  ['records', 'analytics', 'audit', 'import'].forEach(t => {
-    document.getElementById(`tab-content-${t}`).classList.add('hidden');
+  ['records', 'analytics', 'admin', 'audit', 'import'].forEach(t => {
+    const content = document.getElementById(`tab-content-${t}`);
+    if (content) content.classList.add('hidden');
     const btn = document.getElementById(`tab-btn-${t}`);
-    btn.classList.remove('border-emerald-600', 'text-emerald-600', 'font-bold');
-    btn.classList.add('border-transparent', 'text-slate-500');
+    if (btn) {
+      btn.classList.remove('border-emerald-600', 'text-emerald-600', 'font-bold');
+      btn.classList.add('border-transparent', 'text-slate-500');
+    }
   });
 
-  document.getElementById(`tab-content-${tabId}`).classList.remove('hidden');
+  const activeContent = document.getElementById(`tab-content-${tabId}`);
+  if (activeContent) activeContent.classList.remove('hidden');
+
   const activeBtn = document.getElementById(`tab-btn-${tabId}`);
-  activeBtn.classList.remove('border-transparent', 'text-slate-500');
-  activeBtn.classList.add('border-emerald-600', 'text-emerald-600', 'font-bold');
+  if (activeBtn) {
+    activeBtn.classList.remove('border-transparent', 'text-slate-500');
+    activeBtn.classList.add('border-emerald-600', 'text-emerald-600', 'font-bold');
+  }
 
   if (tabId === 'analytics') {
     setTimeout(renderAnalyticsTab, 50);
+  } else if (tabId === 'admin') {
+    renderAdminManageTable();
   }
 }
 
 // Analytics and Charts Initialization
-function initCharts() {
-  // Populated in renderAnalyticsTab
-}
+function initCharts() {}
 
 function renderAnalyticsTab() {
-  // 1. Hall breakdown table
+  // Hall breakdown
   const tbody = document.getElementById('analytics-hall-tbody');
   tbody.innerHTML = '';
+  
+  // Dynamic hall counts based on state.eligibleRecords
+  const hallCounts = {};
+  OFFICIAL_HALLS.forEach(h => hallCounts[h] = 0);
+  state.eligibleRecords.forEach(r => {
+    hallCounts[r.hall] = (hallCounts[r.hall] || 0) + 1;
+  });
+
   const hallSummaries = window.JU_DATA.hallSummaries || [];
 
-  hallSummaries.forEach((h, idx) => {
-    const pct = h.total > 0 ? ((h.batch52 / h.total) * 100).toFixed(1) : 0;
+  OFFICIAL_HALLS.forEach((hallName, idx) => {
+    const b52 = hallCounts[hallName] || 0;
+    const summaryItem = hallSummaries.find(h => h.hall === hallName);
+    const total = summaryItem ? summaryItem.total : b52;
+    const pct = total > 0 ? ((b52 / total) * 100).toFixed(1) : 0;
+
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-50';
     tr.innerHTML = `
       <td class="py-2.5 px-4 font-mono text-xs text-slate-400">${idx + 1}</td>
-      <td class="py-2.5 px-4 font-bold text-slate-800">${escapeHTML(h.hall)}</td>
-      <td class="py-2.5 px-4 text-center font-extrabold text-emerald-600">${h.batch52.toLocaleString()}</td>
-      <td class="py-2.5 px-4 text-center text-slate-500">${h.total.toLocaleString()}</td>
+      <td class="py-2.5 px-4 font-bold text-slate-800">${escapeHTML(hallName)}</td>
+      <td class="py-2.5 px-4 text-center font-extrabold text-emerald-600">${b52.toLocaleString()}</td>
+      <td class="py-2.5 px-4 text-center text-slate-500">${total.toLocaleString()}</td>
       <td class="py-2.5 px-4 text-center">
         <span class="inline-block bg-emerald-50 text-emerald-700 text-xs px-2 py-0.5 rounded font-semibold">${pct}%</span>
       </td>
       <td class="py-2.5 px-4 text-right">
-        <button onclick="quickFilterHall('${h.hall}')" class="px-2.5 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-xs font-semibold rounded transition">
+        <button onclick="quickFilterHall('${hallName}')" class="px-2.5 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-xs font-semibold rounded transition">
           Filter Records &rarr;
         </button>
       </td>
@@ -482,18 +850,18 @@ function renderAnalyticsTab() {
     tbody.appendChild(tr);
   });
 
-  // 2. Hall Bar Chart
+  // Hall Bar Chart
   const hallCtx = document.getElementById('hallChart').getContext('2d');
   if (state.hallChart) state.hallChart.destroy();
   
-  const sortedHalls = [...hallSummaries].sort((a, b) => b.batch52 - a.batch52);
+  const sortedHalls = [...OFFICIAL_HALLS].sort((a, b) => (hallCounts[b] || 0) - (hallCounts[a] || 0));
   state.hallChart = new Chart(hallCtx, {
     type: 'bar',
     data: {
-      labels: sortedHalls.map(h => h.hall.replace(' Hall', '').slice(0, 15)),
+      labels: sortedHalls.map(h => h.replace(' Hall', '').slice(0, 15)),
       datasets: [{
         label: '52nd Batch Students',
-        data: sortedHalls.map(h => h.batch52),
+        data: sortedHalls.map(h => hallCounts[h] || 0),
         backgroundColor: '#059669',
         borderRadius: 4
       }]
@@ -509,12 +877,16 @@ function renderAnalyticsTab() {
     }
   });
 
-  // 3. Department Top 12 Bar Chart
+  // Department Bar Chart
   const deptCtx = document.getElementById('deptChart').getContext('2d');
   if (state.deptChart) state.deptChart.destroy();
 
-  const deptSummary = window.JU_DATA.departmentSummary || {};
-  const topDepts = Object.entries(deptSummary)
+  const deptCounts = {};
+  state.eligibleRecords.forEach(r => {
+    deptCounts[r.department] = (deptCounts[r.department] || 0) + 1;
+  });
+
+  const topDepts = Object.entries(deptCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 12);
 
@@ -602,7 +974,6 @@ function handleFileUpload(event) {
       if (file.name.endsWith('.json')) {
         rows = JSON.parse(content);
       } else {
-        // Simple CSV parser
         const lines = content.split('\n').filter(l => l.trim());
         const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
         rows = lines.slice(1).map(l => {
@@ -617,7 +988,6 @@ function handleFileUpload(event) {
       let quarantinedCount = 0;
 
       rows.forEach((r, idx) => {
-        // Normalization engine
         const rawSession = (r.session || '').toLowerCase().replace(/\s+/g, '');
         const is2223 = rawSession.includes('2022-2023') || rawSession.includes('2022-23') || (r.regNo && r.regNo.startsWith('2023'));
 
@@ -645,8 +1015,7 @@ function handleFileUpload(event) {
         &bull; <strong>${quarantinedCount}</strong> records from other/ambiguous sessions were isolated per PRD FR-06.
       `;
 
-      initKPIs();
-      applyFilters();
+      saveAndRefresh();
     } catch (err) {
       status.className = 'p-4 rounded-lg text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 block';
       status.textContent = `Upload failed: ${err.message}`;

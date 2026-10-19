@@ -55,15 +55,24 @@
           </div>
         </div>
 
-        <!-- PRD FR-08 Mandatory Session Label (Fixed / Read-only) -->
-        <div class="hidden md:flex items-center bg-slate-800/90 border border-emerald-500/40 rounded-xl px-4 py-2 shadow-inner">
-          <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 mr-2.5 animate-ping"></div>
-          <div>
-            <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Data-Layer Allowlist</div>
-            <div class="text-xs font-bold text-emerald-300">
-              Eligible Session: 2022–2023 — JU 52nd Batch / ৫২তম আবর্তন
+        <!-- PRD FR-08 Mandatory Session Label & Admin Button -->
+        <div class="hidden md:flex items-center space-x-3">
+          <div class="flex items-center bg-slate-800/90 border border-emerald-500/40 rounded-xl px-4 py-2 shadow-inner">
+            <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 mr-2.5 animate-ping"></div>
+            <div>
+              <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Data-Layer Allowlist</div>
+              <div class="text-xs font-bold text-emerald-300">
+                Eligible Session: 2022–2023 — JU 52nd Batch / ৫২তম আবর্তন
+              </div>
             </div>
           </div>
+
+          <!-- Quick Admin Action Button -->
+          <button onclick="switchTab('admin')"
+            class="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-xs rounded-xl shadow-md transition flex items-center space-x-1.5 border border-amber-400">
+            <span>⚙️</span>
+            <span>এডমিন প্যানেল (Add / Minus)</span>
+          </button>
         </div>
       </div>
     </div>
@@ -73,9 +82,11 @@
   <div class="md:hidden bg-slate-800 text-slate-200 text-xs px-4 py-2 border-b border-slate-700 flex items-center justify-between">
     <span class="flex items-center font-semibold text-emerald-400">
       <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 mr-1.5"></span>
-      Eligible Session: 2022–2023 (JU 52nd Batch)
+      Session: 2022–2023 (JU 52nd Batch)
     </span>
-    <span class="text-[10px] bg-slate-700 px-2 py-0.5 rounded text-slate-300 font-mono">FR-01 Locked</span>
+    <button onclick="switchTab('admin')" class="px-2 py-0.5 bg-amber-500 text-slate-900 font-bold rounded text-[11px]">
+      ⚙️ এডমিন প্যানেল
+    </button>
   </div>
 
   <!-- Main Container -->
@@ -138,6 +149,10 @@
       <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="tab-btn pb-3 px-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2">
         <span>📊</span>
         <span>Hall & Dept Analytics</span>
+      </button>
+      <button onclick="switchTab('admin')" id="tab-btn-admin" class="tab-btn pb-3 px-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2">
+        <span>⚙️</span>
+        <span class="text-amber-600 font-bold">এডমিন প্যানেল (Add / Minus)</span>
       </button>
       <button onclick="switchTab('audit')" id="tab-btn-audit" class="tab-btn pb-3 px-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2">
         <span>🛡️</span>
@@ -218,6 +233,18 @@
             <button onclick="resetFilters()" class="px-3 py-1.5 text-xs text-rose-600 hover:text-rose-700 font-semibold transition">
               Reset Filters
             </button>
+
+            <!-- Admin Add Button Shortcut -->
+            <button onclick="openAddModal()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-lg shadow-sm transition flex items-center space-x-1 border border-amber-600/30">
+              <span>➕</span>
+              <span>নতুন শিক্ষার্থী যুক্ত করুন (Add)</span>
+            </button>
+
+            <!-- Admin Delete Selected Shortcut -->
+            <button onclick="deleteSelectedStudents()" id="btn-delete-selected" class="hidden px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center space-x-1">
+              <span>🗑️</span>
+              <span>নির্বাচিত রেকর্ড মুছুন (<span id="btn-delete-selected-count">0</span>)</span>
+            </button>
           </div>
 
           <div class="flex items-center space-x-2">
@@ -261,7 +288,7 @@
               <th>Honours Reg. No</th>
               <th>Class Roll</th>
               <th class="text-center">Session Status</th>
-              <th class="text-center">Action</th>
+              <th class="text-center">Action / ম্যানেজমেন্ট</th>
             </tr>
           </thead>
           <tbody id="records-table-body">
@@ -347,7 +374,7 @@
         <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm space-y-4">
           <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
-              <h2 class="text-base font-bold text-slate-900">Top 12 Departments in Batch 52</h2>
+              <h2 class="text-base font-bold text-slate-900">Top Departments in Batch 52</h2>
               <p class="text-xs text-slate-500">Departments with highest student counts (Session 2022-2023)</p>
             </div>
             <span class="text-xs font-semibold bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-200">
@@ -387,7 +414,159 @@
 
     </div>
 
-    <!-- TAB 3: MULTI-SESSION AUDIT (PRD FR-10) -->
+    <!-- TAB 3: ADMIN PANEL (ADD / MINUS / MODIFY) -->
+    <div id="tab-content-admin" class="hidden space-y-6">
+      
+      <!-- Admin Notice Banner -->
+      <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 rounded-2xl shadow-lg border border-slate-800">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center space-x-1.5 bg-amber-500/20 text-amber-300 font-bold text-xs px-3 py-1 rounded-full border border-amber-500/30 mb-2">
+              <span>⚙️</span>
+              <span>এডমিন কন্ট্রোল সেন্টার &bull; ডাটা এড এবং মাইনাস</span>
+            </div>
+            <h3 class="text-xl font-bold">JU 52nd Batch Data Management Console</h3>
+            <p class="text-xs text-slate-300 max-w-2xl mt-1 leading-relaxed">
+              এখান থেকে আপনি সরাসরি নতুন শিক্ষার্থী যুক্ত (Add) করতে পারেন, অপ্রয়োজনীয় শিক্ষার্থী বাদ/মাইনাস (Delete) করতে পারেন এবং সংশোধিত ডাটাবেজ ব্যাকআপ নিতে পারেন।
+            </p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="resetToOriginalData()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-600 transition">
+              🔄 মূল ডেটায় রিসেট করুন
+            </button>
+            <button onclick="downloadUpdatedJSON()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition">
+              💾 JSON ব্যাকআপ নিন
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Admin Grid: Add Form + Management Tools -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Section A: ➕ Add New Student Record Form (Left Column) -->
+        <div class="lg:col-span-5 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+          <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+            <div>
+              <h4 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                <span class="w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 inline-flex items-center justify-center text-xs">➕</span>
+                <span>নতুন রেকর্ড যুক্ত করুন (Add Record)</span>
+              </h4>
+              <p class="text-xs text-slate-500 mt-0.5">৫২তম আবর্তনের নতুন শিক্ষার্থীর তথ্য ইনপুট দিন</p>
+            </div>
+          </div>
+
+          <form id="admin-add-form" onsubmit="handleAdminAddRecord(event)" class="space-y-3.5 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">শিক্ষার্থীর পূর্ণ নাম (Student Name) *</label>
+              <input type="text" id="admin-add-name" required placeholder="e.g. MD. RAHIM HOSSAIN"
+                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm">
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">আবাসিক হল (Residential Hall) *</label>
+              <select id="admin-add-hall" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm bg-white">
+                <!-- 19 Halls options populated dynamically -->
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">বিভাগ / ইনস্টিটিউট (Department) *</label>
+              <select id="admin-add-dept" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm bg-white">
+                <!-- 37 Departments options populated dynamically -->
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">অনার্স রেজি. নম্বর (Reg. No) *</label>
+                <input type="text" id="admin-add-reg" required placeholder="2023xxxxxxx"
+                  class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-sm">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ক্লাস রোল (Class Roll)</label>
+                <input type="text" id="admin-add-roll" placeholder="e.g. 1540"
+                  class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-sm">
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1 flex items-center justify-between">
+                <span>একাডেমিক সেশন (PRD FR-01)</span>
+                <span class="text-[10px] text-emerald-600 font-semibold">🔒 বাধ্যতামূলক ৫২তম সেশন</span>
+              </label>
+              <input type="text" readonly value="2022-2023" id="admin-add-session"
+                class="w-full px-3 py-2 border border-emerald-300 bg-emerald-50 text-emerald-900 font-bold rounded-lg text-sm cursor-not-allowed">
+            </div>
+
+            <div class="pt-2">
+              <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center space-x-2 text-sm">
+                <span>➕</span>
+                <span>রেকর্ড যুক্ত করুন (Save to Database)</span>
+              </button>
+            </div>
+          </form>
+
+          <div id="admin-add-alert" class="hidden p-3 rounded-lg text-xs font-semibold"></div>
+        </div>
+
+        <!-- Section B: ➖ Search, Filter & Delete (Right Column) -->
+        <div class="lg:col-span-7 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+          <div class="border-b border-slate-100 pb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h4 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                <span class="w-6 h-6 rounded-md bg-rose-100 text-rose-700 inline-flex items-center justify-center text-xs">➖</span>
+                <span>রেকর্ড ডিলিট ও ম্যানেজমেন্ট (Minus / Delete)</span>
+              </h4>
+              <p class="text-xs text-slate-500 mt-0.5">যেকোনো রেকর্ড খুঁজে সাথে সাথে মাইনাস / মুছে ফেলুন</p>
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <button onclick="deleteSelectedStudents()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow-sm transition">
+                🗑️ নির্বাচিত সব মুছুন
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Search Filter for Admin Table -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input type="text" id="admin-search" placeholder="নাম, রেজি. বা রোল দিয়ে দ্রুত খুঁজুন..."
+              oninput="renderAdminManageTable()"
+              class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 outline-none">
+            <select id="admin-hall-filter" onchange="renderAdminManageTable()"
+              class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-500 outline-none bg-white">
+              <option value="ALL">সকল হল (All Halls)</option>
+            </select>
+          </div>
+
+          <!-- Mini Table with Delete Buttons -->
+          <div class="overflow-y-auto max-h-[380px] border border-slate-200 rounded-xl">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-700 sticky top-0 z-10 border-b border-slate-200 font-bold uppercase">
+                <tr>
+                  <th class="py-2.5 px-3">নাম ও বিভাগ</th>
+                  <th class="py-2.5 px-3">হল ও রেজি.</th>
+                  <th class="py-2.5 px-3 text-right">অ্যাকশন (মাইনাস)</th>
+                </tr>
+              </thead>
+              <tbody id="admin-manage-tbody" class="divide-y divide-slate-100">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="flex justify-between items-center text-xs text-slate-500 pt-1">
+            <span id="admin-manage-count">মোট রেকর্ড: ১,৯৫৮</span>
+            <span class="text-[11px] bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded font-mono">LocalStorage Auto-Sync Active</span>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- TAB 4: MULTI-SESSION AUDIT (PRD FR-10) -->
     <div id="tab-content-audit" class="hidden space-y-6">
       
       <!-- PRD Section 2 & 10 Compliance Banner -->
@@ -461,7 +640,7 @@
 
     </div>
 
-    <!-- TAB 4: DATASET INGESTION (PRD FR-06) -->
+    <!-- TAB 5: DATASET INGESTION (PRD FR-06) -->
     <div id="tab-content-import" class="hidden space-y-6">
       <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-sm space-y-4">
         <div class="border-b border-slate-100 pb-3">
@@ -485,7 +664,7 @@
 
   </main>
 
-  <!-- Student Detail Modal -->
+  <!-- Student Detail / Edit Modal -->
   <div id="detail-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all">
       <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-5">
@@ -518,11 +697,77 @@
           <span class="font-bold text-slate-800">৫২তম আবর্তন</span>
         </div>
       </div>
-      <div class="bg-slate-50 p-4 border-t border-slate-100 flex justify-end space-x-2">
+      <div class="bg-slate-50 p-4 border-t border-slate-100 flex justify-between items-center">
+        <button id="modal-delete-btn" onclick="" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition flex items-center space-x-1">
+          <span>🗑️</span>
+          <span>এই রেকর্ডটি মুছুন (Delete)</span>
+        </button>
         <button onclick="closeModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold">
           Close
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Add New Student Modal -->
+  <div id="add-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all">
+      <div class="bg-gradient-to-r from-emerald-800 to-teal-800 text-white p-5 flex items-center justify-between">
+        <div>
+          <h4 class="text-base font-bold text-white flex items-center space-x-1.5">
+            <span>➕</span>
+            <span>নতুন শিক্ষার্থী যুক্ত করুন (Add to 52nd Batch)</span>
+          </h4>
+          <p class="text-xs text-emerald-200">Session 2022-2023 / ৫২তম আবর্তন</p>
+        </div>
+        <button onclick="closeAddModal()" class="text-white/70 hover:text-white text-2xl leading-none">&times;</button>
+      </div>
+
+      <form onsubmit="handleModalAddRecord(event)" class="p-6 space-y-4 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">শিক্ষার্থীর পূর্ণ নাম *</label>
+          <input type="text" id="modal-add-name" required placeholder="e.g. TANVIR AHMED"
+            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">আবাসিক হল *</label>
+            <select id="modal-add-hall" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-xs bg-white">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">বিভাগ / ইনস্টিটিউট *</label>
+            <select id="modal-add-dept" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-xs bg-white">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">অনার্স রেজিস্ট্রেশন নম্বর *</label>
+            <input type="text" id="modal-add-reg" required placeholder="2023xxxxxxx"
+              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-sm">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ক্লাস রোল</label>
+            <input type="text" id="modal-add-roll" placeholder="e.g. 1540"
+              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-sm">
+          </div>
+        </div>
+
+        <div class="pt-2 flex justify-end space-x-2">
+          <button type="button" onclick="closeAddModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow transition flex items-center space-x-1.5">
+            <span>➕</span>
+            <span>যুক্ত করুন (Save Record)</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -533,7 +778,7 @@
         Jahangirnagar University — 52nd Batch Data Selection & Analysis Portal (Session 2022–2023 / ৫২তম আবর্তন)
       </div>
       <div class="text-[11px] text-slate-400">
-        Designed strictly compliant with PRD v1.0 &bull; Mandatory Data/Query Layer Session Isolation &bull; Automated 19-Hall Analytics
+        Designed strictly compliant with PRD v1.0 &bull; Mandatory Data/Query Layer Session Isolation &bull; Automated 19-Hall Analytics &bull; Full Admin Add/Delete Enabled
       </div>
     </div>
   </footer>
