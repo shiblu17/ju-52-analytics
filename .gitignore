@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+*.log
+check-*.js
+test-*.js
+parse-*.js
+generate-*.js
+validate-*.js

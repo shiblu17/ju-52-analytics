@@ -1,0 +1,133 @@
+/* Custom Styles for JU 52nd Batch Data Portal */
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --primary-navy: #0f172a;
+  --secondary-navy: #1e293b;
+  --accent-emerald: #059669;
+  --accent-blue: #2563eb;
+  --bg-slate: #f8fafc;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', 'Hind Siliguri', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-slate);
+  color: #1e293b;
+}
+
+/* Modern Web Guidance: Responsive Table Pattern */
+.table-wrapper {
+  overflow: auto;
+  max-inline-size: 100%;
+  max-block-size: calc(100vh - 360px);
+  min-height: 400px;
+  container-type: inline-size;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  background: white;
+}
+
+.table-wrapper:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+/* Sticky column headers (Desktop & Tablet) */
+thead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 20;
+}
+
+thead th {
+  background-color: #f1f5f9;
+  border-bottom: 2px solid #cbd5e1;
+  padding: 0.85rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #475569;
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.875rem;
+}
+
+tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+tbody tr.selected-row {
+  background-color: #ecfdf5 !important;
+}
+
+/* Mobile Stacked Layout Adaptation */
+@container (width < 680px) {
+  table, thead, tbody, tr, th, td {
+    display: block;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tr {
+    margin-bottom: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    background: white;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+
+  tbody td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid #f8fafc;
+  }
+
+  tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #64748b;
+    font-size: 0.8rem;
+    margin-right: 1rem;
+  }
+}
+
+/* Custom Scrollbars */
+.table-wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.table-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Pulse animation for active session badge */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.02); }
+}
+
+.pulse-badge {
+  animation: pulse-subtle 3s infinite ease-in-out;
+}
