@@ -197,6 +197,29 @@ function initAdminDropdowns() {
       modalDept.appendChild(opt);
     });
   }
+
+  const editHall = document.getElementById('edit-student-hall');
+  const editDept = document.getElementById('edit-student-dept');
+
+  if (editHall) {
+    editHall.innerHTML = '';
+    OFFICIAL_HALLS.forEach(h => {
+      const opt = document.createElement('option');
+      opt.value = h;
+      opt.textContent = h;
+      editHall.appendChild(opt);
+    });
+  }
+
+  if (editDept) {
+    editDept.innerHTML = '';
+    OFFICIAL_DEPTS.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = d;
+      editDept.appendChild(opt);
+    });
+  }
 }
 
 // Save modified records to LocalStorage and update entire UI
@@ -323,11 +346,14 @@ function renderTable() {
       </td>
       <td class="text-center" data-label="Action">
         <div class="inline-flex items-center space-x-1">
-          <button onclick="viewStudentDetails('${record.id}')" title="বিস্তারিত দেখুন" class="px-2 py-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded transition">
+          <button onclick="viewStudentDetails('${record.id}')" title="বিস্তারিত দেখুন" class="px-2 py-1 text-[11px] font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded transition">
             View
           </button>
-          <button onclick="deleteStudent('${record.id}')" title="রেকর্ড মাইনাস / মুছুন" class="px-2 py-1 text-[11px] font-semibold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 rounded transition">
-            🗑️ বাদ দিন
+          <button onclick="openEditModal('${record.id}')" title="রেকর্ড এডিট / সংশোধন করুন" class="px-2 py-1 text-[11px] font-semibold text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 rounded transition border border-blue-200">
+            ✏️ এডিট
+          </button>
+          <button onclick="deleteStudent('${record.id}')" title="রেকর্ড মাইনাস / মুছুন" class="px-2 py-1 text-[11px] font-semibold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 rounded transition border border-rose-200">
+            🗑️ বাদ
           </button>
         </div>
       </td>
@@ -491,9 +517,14 @@ function renderAdminManageTable() {
         <div class="text-[10px] font-mono text-slate-500">Reg: ${escapeHTML(r.regNo)} | Roll: ${escapeHTML(r.rollNo || '-')}</div>
       </td>
       <td class="py-2 px-3 text-right">
-        <button onclick="deleteStudent('${r.id}')" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded font-bold text-[11px] transition border border-rose-200">
-          🗑️ বাদ দিন
-        </button>
+        <div class="inline-flex items-center space-x-1">
+          <button onclick="openEditModal('${r.id}')" class="px-2 py-1 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white rounded font-bold text-[11px] transition border border-blue-200">
+            ✏️ এডিট
+          </button>
+          <button onclick="deleteStudent('${r.id}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded font-bold text-[11px] transition border border-rose-200">
+            🗑️ বাদ
+          </button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
@@ -768,6 +799,14 @@ function viewStudentDetails(id) {
   document.getElementById('modal-roll').textContent = student.rollNo || 'N/A';
   document.getElementById('modal-session').textContent = '2022-2023 (JU 52nd Batch)';
   
+  const editBtn = document.getElementById('modal-edit-btn');
+  if (editBtn) {
+    editBtn.onclick = () => {
+      closeModal();
+      openEditModal(id);
+    };
+  }
+
   const deleteBtn = document.getElementById('modal-delete-btn');
   if (deleteBtn) {
     deleteBtn.onclick = () => deleteStudent(id);
@@ -778,6 +817,53 @@ function viewStudentDetails(id) {
 
 function closeModal() {
   document.getElementById('detail-modal').classList.add('hidden');
+}
+
+// Edit Modal Functions (এডিট / সংশোধন)
+function openEditModal(id) {
+  const student = state.eligibleRecords.find(r => r.id === id);
+  if (!student) return;
+
+  document.getElementById('edit-student-id').value = student.id;
+  document.getElementById('edit-student-name').value = student.name;
+  document.getElementById('edit-student-hall').value = student.hall;
+  document.getElementById('edit-student-dept').value = student.department;
+  document.getElementById('edit-student-reg').value = student.regNo;
+  document.getElementById('edit-student-roll').value = student.rollNo || '';
+
+  document.getElementById('edit-modal').classList.remove('hidden');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.add('hidden');
+}
+
+function handleSaveEdit(event) {
+  event.preventDefault();
+  const id = document.getElementById('edit-student-id').value;
+  const student = state.eligibleRecords.find(r => r.id === id);
+  if (!student) return;
+
+  const name = document.getElementById('edit-student-name').value.trim();
+  const hall = document.getElementById('edit-student-hall').value;
+  const dept = document.getElementById('edit-student-dept').value;
+  const regNo = document.getElementById('edit-student-reg').value.trim();
+  const rollNo = document.getElementById('edit-student-roll').value.trim();
+
+  if (!name || !regNo) {
+    alert('নাম এবং রেজিস্ট্রেশন নম্বর আবশ্যক!');
+    return;
+  }
+
+  student.name = name.toUpperCase();
+  student.hall = hall;
+  student.department = dept;
+  student.regNo = regNo;
+  student.rollNo = rollNo;
+
+  saveAndRefresh();
+  closeEditModal();
+  alert(`✓ শিক্ষার্থী "${student.name}" এর তথ্য সফলভাবে সংশোধন করা হয়েছে!`);
 }
 
 // Tab Switching
