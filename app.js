@@ -1,44 +1,6 @@
 // JU 52nd Batch Academic Data Portal - Application Logic & Admin Engine
 // PRD v1.0 Compliant: Mandatory Session Restriction to 2022-2023 at the Data/Query Layer
-// Full Admin Panel with Realtime Cloud Sync with batchday52ju.xyz
-
-// --- Supabase Realtime Sync Engine ---
-const SUPABASE_URL = "https://enebjlvbaipggzswnzme.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVuZWJqbHZiYWlwZ2d6c3duem1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyODc4NzEsImV4cCI6MjA4OTg2Mzg3MX0.JDWbZ0ce9CfoypVto-ndXRBTKBselqXj1SlQjpWYuk0";
-
-let supabaseClient = null;
-let syncChannel = null;
-
-try {
-  if (window.supabase) {
-    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    syncChannel = supabaseClient.channel('ju52_data_sync');
-    syncChannel.subscribe((status) => {
-      console.log('⚡ [ju-52-analytics] Supabase channel connected:', status);
-      const badge = document.getElementById('supabase-sync-badge');
-      if (badge && status === 'SUBSCRIBED') {
-        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-2"></span><span>⚡ রিয়েলটাইম সিঙ্ক: লাইভ</span>';
-      }
-    });
-  }
-} catch (e) {
-  console.warn('Supabase init warning:', e);
-}
-
-function broadcastChange(action, payload) {
-  if (syncChannel) {
-    syncChannel.send({
-      type: 'broadcast',
-      event: 'student_change',
-      payload: {
-        action,
-        ...payload,
-        timestamp: Date.now()
-      }
-    }).catch(err => console.warn('Broadcast send notice:', err));
-  }
-}
-
+// Full Admin Panel with Add, Minus (Delete), Bulk Delete, and LocalStorage Persistence
 
 const CANONICAL_SESSION = '2022-2023';
 const BATCH_LABEL = 'JU 52nd Batch / ৫২তম আবর্তন';
